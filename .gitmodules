@@ -1,3 +1,6 @@
 [submodule "zydis"]
 	path = zydis
 	url = https://github.com/zyantific/zydis/
+[submodule "rdpwrap_ref"]
+	path = rdpwrap_ref
+	url = https://github.com/stascorp/rdpwrap.git
