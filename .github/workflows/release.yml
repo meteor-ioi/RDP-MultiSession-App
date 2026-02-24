@@ -19,12 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
       - name: setup node
         uses: actions/setup-node@v4
         with:
@@ -32,19 +26,46 @@ jobs:
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Get tag version
+        id: get_version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update versions in config files
+        shell: bash
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          echo "Syncing version to $VERSION"
+          node -e "
+            const fs = require('fs');
+            // 更新 package.json
+            const pkgPath = 'rdp-multi-session-ui/package.json';
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            pkg.version = '$VERSION';
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+            console.log('Updated package.json version to ' + '$VERSION');
+            
+            // 更新 tauri.conf.json
+            const tauriPath = 'rdp-multi-session-ui/src-tauri/tauri.conf.json';
+            const tauri = JSON.parse(fs.readFileSync(tauriPath, 'utf8'));
+            tauri.version = '$VERSION';
+            fs.writeFileSync(tauriPath, JSON.stringify(tauri, null, 2));
+            console.log('Updated tauri.conf.json version to ' + '$VERSION');
+          "
 
       - name: install frontend dependencies
+        working-directory: rdp-multi-session-ui
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
+          tagName: v__VERSION__
           releaseName: 'App v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
+          projectPath: rdp-multi-session-ui
           args: ${{ matrix.args }}
