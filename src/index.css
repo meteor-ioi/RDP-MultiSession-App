@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+    --color-vercel-blue: #0070F3;
+}
+
 :root {
     --font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
