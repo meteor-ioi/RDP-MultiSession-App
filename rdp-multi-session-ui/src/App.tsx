@@ -351,9 +351,9 @@ function App() {
             try {
               const content = logs.map(l => `[${l.time}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
               const path: string = await invoke("save_logs", { logContent: content });
-              alert(`日志已成功导出至: ${path}`);
+              await message(`日志已成功导出至: ${path}`, { title: "RDP 管理器", kind: "info" });
             } catch (err) {
-              alert(`导出日志失败: ${err}`);
+              await message(`导出日志失败: ${err}`, { title: "RDP 管理器", kind: "error" });
             }
           }}
         >
