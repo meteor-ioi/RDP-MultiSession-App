@@ -1,6 +1,4 @@
-mod patcher;
-
-use patcher::PatchEngine;
+use crate::patcher::PatchEngine;
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::Command;
