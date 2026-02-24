@@ -1,9 +1,7 @@
 fn main() {
-    let mut builder = tauri_build::Builder::default();
-
-    #[cfg(windows)]
-    {
-        let windows = tauri_build::WindowsAttributes::new().app_manifest(r#"
+    tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(
+        tauri_build::WindowsAttributes::new().app_manifest(
+            r#"
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <dependency>
     <dependentAssembly>
@@ -25,9 +23,8 @@ fn main() {
     </security>
   </trustInfo>
 </assembly>
-"#);
-        builder = builder.windows_attributes(windows);
-    }
-
-    builder.build().expect("failed to build tauri app");
+"#,
+        ),
+    ))
+    .expect("failed to build tauri app");
 }
