@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { message } from "@tauri-apps/plugin-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
@@ -346,7 +347,15 @@ function App() {
         </div>
         <button
           className="w-full mt-4 py-3 bg-gray-100 hover:bg-black hover:text-white rounded-xl text-xs font-bold transition-all uppercase"
-          onClick={() => alert("日志已保存至本地桌面。")}
+          onClick={async () => {
+            try {
+              const content = logs.map(l => `[${l.time}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
+              const path: string = await invoke("save_logs", { logContent: content });
+              alert(`日志已成功导出至: ${path}`);
+            } catch (err) {
+              alert(`导出日志失败: ${err}`);
+            }
+          }}
         >
           导出原始日志
         </button>

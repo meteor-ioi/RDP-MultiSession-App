@@ -11,13 +11,15 @@ mod patcher;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_system_status,
             commands::set_defender_exclusion,
             commands::set_persistence,
             commands::check_updates,
             commands::patch_rdp,
-            commands::restore_rdp
+            commands::restore_rdp,
+            commands::save_logs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -18,10 +18,19 @@ pub struct AppStatus {
 pub fn get_system_status() -> Result<AppStatus, String> {
     #[cfg(target_os = "windows")]
     {
-        // Dummy logic for now to establish the bridge
+        let build_opt = crate::patcher::PatchEngine::detect_build();
+        let os_build = match build_opt {
+            Some(b) => format!("Windows (Build {})", b),
+            None => "Windows (Unknown)".into(),
+        };
+        let is_active = match build_opt {
+            Some(b) => crate::patcher::PatchEngine::is_patched(Path::new(r"C:\Windows\System32\termsrv.dll"), b),
+            None => false,
+        };
+
         Ok(AppStatus {
-            is_active: false,
-            os_build: "Windows (Detecting...)".into(),
+            is_active,
+            os_build,
             persistence_enabled: false,
             defender_excluded: false,
         })
@@ -76,16 +85,18 @@ pub fn set_persistence(enable: bool) -> Result<String, String> {
                 .unwrap_or_default()
                 .to_string_lossy()
                 .to_string();
-            
-            // In a real scenario, we might want to register a specific background argument.
-            let script = format!(
-                "schtasks /create /tn '{}' /tr '\\\"{}\\\" --daemon' /sc onstart /ru SYSTEM /rl HIGHEST /f",
-                task_name, exe_path
-            );
-            
-            let output = Command::new("cmd")
+            let tr_arg = format!("\"{}\" --daemon", exe_path);
+            let output = Command::new("schtasks")
                 .creation_flags(CREATE_NO_WINDOW)
-                .args(&["/c", &script])
+                .args(&[
+                    "/create",
+                    "/tn", task_name,
+                    "/tr", &tr_arg,
+                    "/sc", "onstart",
+                    "/ru", "SYSTEM",
+                    "/rl", "HIGHEST",
+                    "/f"
+                ])
                 .output()
                 .map_err(|e| e.to_string())?;
 
@@ -218,4 +229,19 @@ pub fn restore_rdp() -> Result<String, String> {
         std::thread::sleep(std::time::Duration::from_secs(1));
         Ok("Mock restore successful (non-Windows build)".into())
     }
+}
+
+#[tauri::command]
+pub fn save_logs(log_content: String) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    let base = std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\".to_string());
+    
+    #[cfg(not(target_os = "windows"))]
+    let base = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+
+    let desktop = std::path::Path::new(&base).join("Desktop");
+    let file = desktop.join("RDP_Manager_Logs.txt");
+    
+    std::fs::write(&file, log_content).map_err(|e| e.to_string())?;
+    Ok(file.to_string_lossy().to_string())
 }
