@@ -2,6 +2,10 @@
 
 Automatically find offsets needed by RDPWrap and generate rdpwrap.ini
 
+> [!IMPORTANT]
+> **This application is designed specifically for Windows.** It does not support macOS or Linux operating systems.
+
+
 ## Usage
 
 Pass the path of termsrv.dll as command line argument. If not provided, default to current system's termsrv.dll in System32 directory.
