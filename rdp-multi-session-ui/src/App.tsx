@@ -177,13 +177,23 @@ function App() {
     }
   };
 
+  const refreshStatus = async () => {
+    try {
+      const status: AppStatus = await invoke("get_system_status");
+      setIsActive(status.is_active);
+      setPersistence(status.persistence_enabled);
+      setDefender(status.defender_excluded);
+    } catch (_) {}
+  };
+
   const togglePatch = async () => {
     setIsPatching(true);
     addLog(isActive ? "开始执行系统文件还原流程..." : "准备攫取 termsrv.dll 权限并写入新特征码...", "wait");
     try {
       const res: string = await invoke(isActive ? "restore_rdp" : "patch_rdp");
-      setIsActive(!isActive);
       addLog(res, "success");
+      // Re-fetch actual status from backend instead of optimistic flip
+      await refreshStatus();
     } catch (err) {
       addLog(`内核补丁操作失败: ${err}`, "error");
     } finally {
